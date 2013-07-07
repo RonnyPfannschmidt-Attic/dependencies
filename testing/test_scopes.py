@@ -1,11 +1,11 @@
 import pytest
-from dicm import DependencyManager
+from dicm import DependencyManager, Scopes
 
 @pytest.fixture
-def dm():
-    return DependencyManager(scopenames=['one', 'two'])
+def sm():
+    return Scopes(names=['one', 'two'])
 
 
-def test_enter_leave_known_scopes(dm):
-    dm.enter_scope('one')
-    dm.leave_scope('one')
+def test_enter_leave_known_scopes(sm):
+    sm.enter('one')
+    sm.leave('one')
