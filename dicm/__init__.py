@@ -17,6 +17,14 @@ class ScopeDict(dict):
         self.name = name
         self.cleanups = []
 
+    def run_cleanups(self):
+        while self.cleanups:
+            cleanup = self.cleanups.pop()
+            cleanup()
+
+    def add_cleanup(self, cleanup):
+        self.cleanups.append(cleanup)
+
     def __repr__(self):
         dr = dict.__repr__(self)
         return '<Scoped {name} {dr}>'.format(
@@ -47,6 +55,9 @@ class Scopes(Mapping):
     def __iter__(self):
         return iter(self._key_set())
 
+    def add_cleanup(self, cleanup):
+        self.stack[-1].add_cleanup(cleanup)
+
     def __len__(self):
         return len(self._key_set())
 
@@ -56,7 +67,8 @@ class Scopes(Mapping):
 
     def leave(self, name):
         assert self.stack[-1].name == name
-        self.stack.pop()
+        scope = self.stack.pop()
+        scope.run_cleanups()
 
 class DependencyManager(object):
     def __init__(self, scopenames):
