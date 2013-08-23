@@ -74,10 +74,6 @@ class DependencyManager(object):
 
     def enter_scope(self, name):
         self.scopes.enter(name)
-        self.scopes.set(
-            '__scope__',
-            weakref.proxy(self.scopes.current),
-        )
 
     def get(self, name):
         return self.scopes.get(name)
