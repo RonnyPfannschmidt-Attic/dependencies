@@ -1,6 +1,8 @@
 from collections import Mapping
 import weakref
 from .utils import SimpleDelegate
+import pytest
+from _pytest.python import getfuncargnames
 
 
 class ScopeDict(dict):
@@ -77,5 +79,25 @@ class DependencyManager(object):
 
     def get(self, name):
         return self.scopes.get(name)
+
+    def call(self, function):
+        function = WrappedFunction(function, self)
+        return function.call()
+
+class WrappedFunction(object):
+    def __init__(self, callable, dm):
+        self._callable = callable
+        self._dm = dm
+
+    def get_args(self):
+        names = getfuncargnames(self._callable)
+        result = {}
+        for name in names:
+            result[name] = self._dm.get(name)
+        return result
+
+    def call(self):
+        args = self.get_args()
+        return self._callable(**args)
 
 
