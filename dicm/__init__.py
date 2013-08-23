@@ -70,19 +70,6 @@ class Scopes(Mapping):
     def set(self, name, value):
         self.current[name] = value
 
-class DependencyManager(object):
-    def __init__(self, scopenames):
-        self.scopes = Scopes(scopenames)
-
-    def enter_scope(self, name):
-        self.scopes.enter(name)
-
-    def get(self, name):
-        return self.scopes.get(name)
-
-    def call(self, function):
-        function = WrappedFunction(function, self)
-        return function.call()
 
 class WrappedFunction(object):
     def __init__(self, callable, dm):
@@ -101,3 +88,17 @@ class WrappedFunction(object):
         return self._callable(**args)
 
 
+class DependencyManager(object):
+    def __init__(self, scopenames, wrap_call=WrappedFunction):
+        self.scopes = Scopes(scopenames)
+        self.wrap_call = wrap_call
+
+    def enter_scope(self, name):
+        self.scopes.enter(name)
+
+    def get(self, name):
+        return self.scopes.get(name)
+
+    def call(self, function):
+        function = self.wrap_call(function, self)
+        return function.call()
