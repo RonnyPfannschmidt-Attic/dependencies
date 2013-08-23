@@ -11,6 +11,11 @@ class SimpleDelegate(object):
         if instance is not None:
             obj = getattr(instance, self.attribute)
             return getattr(obj, self.method)
+        return self
+
+    def __set__(self, instance, type):
+        if instance is None:
+            super(SimpleDelegate, self).__set__(instance, type)
 
 class ScopeDict(dict):
     def __init__(self, name):
@@ -38,6 +43,10 @@ class Scopes(Mapping):
         self.names = names
         self.stack = []
 
+    @property
+    def current(self):
+        return self.stack[-1]
+
     def __getitem__(self, name):
         for item in reversed(self.stack):
             # use self as not found marker
@@ -56,13 +65,13 @@ class Scopes(Mapping):
         return iter(self._key_set())
 
     def add_cleanup(self, cleanup):
-        self.stack[-1].add_cleanup(cleanup)
+        self.current.add_cleanup(cleanup)
 
     def __len__(self):
         return len(self._key_set())
 
     def enter(self, name):
-        assert name in self.names
+        assert self.names[len(self.stack)] == name
         self.stack.append(ScopeDict(name))
 
     def leave(self, name):
@@ -70,9 +79,13 @@ class Scopes(Mapping):
         scope = self.stack.pop()
         scope.run_cleanups()
 
+    def set(self, name, value):
+        self.current[name] = value
+
 class DependencyManager(object):
     def __init__(self, scopenames):
         self.scopes = Scopes(scopenames)
 
     enter_scope = SimpleDelegate('scopes', 'enter')
     leave_scope = SimpleDelegate('scopes', 'leave')
+    set = SimpleDelegate('scopes', 'set')
