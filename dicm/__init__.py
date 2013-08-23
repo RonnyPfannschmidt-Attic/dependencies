@@ -1,5 +1,5 @@
 from collections import Mapping
-
+import weakref
 from .utils import SimpleDelegate
 
 
@@ -72,6 +72,14 @@ class DependencyManager(object):
     def __init__(self, scopenames):
         self.scopes = Scopes(scopenames)
 
-    enter_scope = SimpleDelegate('scopes', 'enter')
-    leave_scope = SimpleDelegate('scopes', 'leave')
-    set = SimpleDelegate('scopes', 'set')
+    def enter_scope(self, name):
+        self.scopes.enter(name)
+        self.scopes.set(
+            '__scope__',
+            weakref.proxy(self.scopes.current),
+        )
+
+    def get(self, name):
+        return self.scopes.get(name)
+
+
